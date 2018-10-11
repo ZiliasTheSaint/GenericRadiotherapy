@@ -1,0 +1,55 @@
+/control/verbose 1
+/run/verbose 0
+/event/verbose 0
+/world/size 4.0 m
+#Water
+/phantom/selectMaterial tissue
+/event/printModulo 1000
+/det/SetFocusToDetectorCenterDistance 90.0 cm
+/det/frontalBeamRadius 0.1 cm
+/det/frontalBeamAngle 0.0 deg
+#tissue
+# Visualize Phantom with OPENGL
+#/control/execute VisualisationMacro.mac
+#
+# Scoring mesh is used to calculate
+#  the energy deposition in the phantom
+/score/create/boxMesh boxMesh_1
+#
+# the voxels are 1 mm wide.
+/score/mesh/boxSize 15. 15. 15. cm
+/score/mesh/nBin 300 300 300
+#/score/mesh/nBin 60 60 60
+#must set boxSize and bins again for other usage
+/other/mesh/boxSize 15. 15. 15. cm
+/other/mesh/nBin 300 300 300
+#/other/mesh/nBin 60 60 60
+#
+#/score/quantity/energyDeposit eDep
+#/score/quantity/doseDeposit eDep
+/score/quantity/doseDeposit2 eDep2
+#
+/score/close
+#
+/score/list     
+/gun/particle proton
+#e-
+#gamma
+#e+
+#alpha
+#anti_alpha
+#He3
+#anti_He3
+#anti_proton
+#deuteron
+#anti_deuteron
+#triton
+#anti_triton
+/gun/energy 50.662 MeV
+/run/beamOn  1000
+#
+# Dump scores to a file
+#
+#/score/dumpQuantityToFile boxMesh_1 eDep EnergyDeposition.out
+#/score/dumpQuantityToFile boxMesh_1 eDep2 EnergyDeposition.out
+#
