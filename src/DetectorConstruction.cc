@@ -82,10 +82,25 @@ DetectorConstruction::~DetectorConstruction()
 
 void DetectorConstruction::UpdatePhantomSize(G4double hx, G4double hy, G4double hz)
 {
+	//fix===============================
+	//see hh G4Box*              Phantom;  //pointer to solid phantom
+	if (!Phantom) return;                       // geometria nu e construita inca
+	if (hx > worldSizeX || hy > worldSizeY || hz > worldSizeZ)
+    G4Exception("DetectorConstruction::UpdatePhantomSize()", "Etherapy001", FatalException,
+                "The phantom (mesh) does not fit in the world volume.");
+	//=======================================
+
     // update to mesh size
     phantomSizeX = hx;
     phantomSizeY = hy;
     phantomSizeZ = hz;
+
+	//Fix=========================
+	Phantom->SetXHalfLength(hx);                // solidul real
+	Phantom->SetYHalfLength(hy);
+	Phantom->SetZHalfLength(hz);
+	phantomMass = phantomDensity * 8.0*hx*hy*hz;//new mass. 2^3=8 because half size!!!!
+	//=============================
 
     // Tell Geant4 geometry was changed
     G4RunManager::GetRunManager()->GeometryHasBeenModified();
