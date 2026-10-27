@@ -48,7 +48,7 @@ public:
   ~DetectorConstruction();
 
   G4VPhysicalVolume*   Construct();  
-  void SwitchBrachytherapicSeed(); //Change radiactive source through GUI
+  void SwitchBrachytherapicSeed();
   void SelectBrachytherapicSeed(G4String val);
 
   void ConstructPhantom(); 
@@ -56,10 +56,8 @@ public:
   void SetPhantomMaterial(G4String); 
   G4double getPhantonDensity(){return phantomDensity;};
   static G4double phantomDensity;
-  //static G4double initialSourceActivity;
-  //static G4double sourceHalfLife;
-  //static G4double exposureTime;
-  //static G4int nbEventInRun;
+  
+  void UpdatePhantomSize(G4double hx, G4double hy, G4double hz);
   
   void setPhantomSizeX(G4double val){
 	  phantomSizeX = val;//in fact halfSize
@@ -137,7 +135,7 @@ private:
   G4double fFocusToDetectorCenterDistance;
   G4double fFocusToDetectorCenterRealDistance;
   G4double phantomMass;
-  //G4int     printModulo;  
+ 
 };
 
 #endif

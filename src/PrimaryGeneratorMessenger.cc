@@ -53,11 +53,11 @@ PrimaryGeneratorMessenger::PrimaryGeneratorMessenger(PrimaryGeneratorAction* pri
   primaryParticleEnergySpectrumCmd = 
                               new G4UIcmdWithAString("/primary/energy",this);
   primaryParticleEnergySpectrumCmd -> SetGuidance("Select the energy of gamma emitted by the source.");
-  primaryParticleEnergySpectrumCmd -> SetGuidance("Iodium: Iodium Source");
-  primaryParticleEnergySpectrumCmd -> SetGuidance("Iridium: Iridium Source");
+  primaryParticleEnergySpectrumCmd -> SetGuidance(".....");
+  primaryParticleEnergySpectrumCmd -> SetGuidance(".....");
   primaryParticleEnergySpectrumCmd -> SetParameterName("choice",true);
-  primaryParticleEnergySpectrumCmd -> SetDefaultValue("Iridium");
-  primaryParticleEnergySpectrumCmd -> SetCandidates("Iridium / Iodium");
+  primaryParticleEnergySpectrumCmd -> SetDefaultValue("....");
+  primaryParticleEnergySpectrumCmd -> SetCandidates("....");
   primaryParticleEnergySpectrumCmd -> AvailableForStates(G4State_PreInit,G4State_Idle);      
 }
 
@@ -68,8 +68,8 @@ PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger()
 }
 
 void PrimaryGeneratorMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
-{ 
-   // Change the energy of the emitted photons (iridium - iodium source)
+{    
+  //not used
   if(command == primaryParticleEnergySpectrumCmd)
     primaryAction -> SwitchEnergy(newValue); 
 }

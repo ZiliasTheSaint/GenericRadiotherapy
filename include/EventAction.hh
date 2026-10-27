@@ -46,14 +46,22 @@ public:
   void  EndOfEventAction(const G4Event*);    
                            
   void SetPrintModulo(G4int    val)  {printModulo = val;};
-  static void Fill(G4int index, G4double energyDeposit){
+  static void Fill(G4int index, G4double energyDeposit){//EventAction::Fill(index,dose); from scoring
 	doseEventTotal[index]+= energyDeposit;//score DDEP per Event for statistics  
   };
-  static void FillEnergy(G4int index, G4double energyDeposit){
-	energyEventTotal[index]+= energyDeposit;//score EDEP per Event for statistics  ...used for TOTAL DOSE real (divided by TRUE total mass)
-	//in dose total it is missed mass from voxels where dose dep is zero so total dose there is sum of voxel doses not TOTAL REAL DOSE in phantom
-	//note that sum of voxel doses varies from mesh to mesh but REAL TOTAL DOSE per phantom is and must be a CONSTANT!!!!
-	//mesh affects only errors, more mesh (dense), means more data therefore less error!!! OK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  static void FillEnergy(G4int index, G4double energyDeposit){//EventAction::FillEnergy(index,weight*edep);
+	energyEventTotal[index]+= energyDeposit;//score EDEP per Event for statistics
+
+	//TOTAL DOSE in phantom is TOTAL EDEP in phantom divided by whole phantom mass
+		
+	//Assume almost all hits are in a few small voxels => their dose are huge due to small voxel size.
+	//the sum of voxel doses gives huge values whereas if they were uniformely distributed the dose
+	//would be very low by comparison.
+	//so total dose of voxels doses not equals TOTAL DOSE in phantom.
+
+	//Also sum of voxel doses may vary from mesh to mesh but TOTAL DOSE per phantom is
+	//and must be a CONSTANT!!!!
+	//mesh also affects errors, more mesh (dense), means less hits in voxels therefore more errors per voxel!
   };    
 private:
    G4int     printModulo;                             

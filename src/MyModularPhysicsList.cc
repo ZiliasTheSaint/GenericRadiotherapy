@@ -86,8 +86,9 @@ MyModularPhysicsList::MyModularPhysicsList()
   //option 3 (if geant4.9.5) or 4 (if geant4.9.6) will be use for allowing precise simulation at low and intermediate energies!!
   //RegisterPhysics( new G4EmStandardPhysics_option3(ver) );//in geant4.9.6 will use _option4!!
   //RegisterPhysics( new EmStandardPhysics_option4(ver) );//just a replica here!
-  RegisterPhysics( new G4EmStandardPhysics(ver) );
-  //RegisterPhysics( new G4EmStandardPhysics_option4(ver) );
+  
+  //RegisterPhysics( new G4EmStandardPhysics(ver) );
+  RegisterPhysics( new G4EmStandardPhysics_option4(ver) );
 
   // Synchroton Radiation & GN Physics (GammaNuclear Physics)
   RegisterPhysics( new G4EmExtraPhysics(ver) );

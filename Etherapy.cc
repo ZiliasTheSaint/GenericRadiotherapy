@@ -29,7 +29,7 @@
 #include "G4RunManager.hh"
 #include "G4UImanager.hh"
 #include "G4UIExecutive.hh"
-#include "BrachyAnalysis.hh"
+
 #ifdef G4VIS_USE
 #include "G4VisExecutive.hh"
 #endif
@@ -37,7 +37,7 @@
 #include "DetectorConstruction.hh"
 #include "QGSP_BIC_EMY.hh"
 #include "G4PhysListFactory.hh"
-#include "BrachyPhysicsList.hh"
+
 #include "MyModularPhysicsList.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "G4SDManager.hh"
@@ -63,8 +63,7 @@ int main(int argc ,char ** argv)
 
 {
   ScoringManager::GetScoringManager(); // instanciate the interactive scoring manager
-	//new ScoringManager();
-
+	
   G4RunManager* pRunManager = new G4RunManager;
 
   // Access to the Scoring Manager pointer
@@ -73,15 +72,6 @@ int main(int argc ,char ** argv)
   // Overwrite the default output file with user-defined one 
   scoringManager->SetScoreWriter(new UserScoreWriter());
 
-  // Initialize the physics component
-  //G4VModularPhysicsList* physicsList = new QGSP_BIC_EMY;
-  //physicsList->SetVerboseLevel(1);
-  //pRunManager->SetUserInitialization(physicsList);
-  //G4PhysListFactory factory;  //this is the new INITIALISATION!!!!!!!!!!!!!!!!!!                                   
-  //pRunManager->SetUserInitialization(factory.GetReferencePhysList("QGSP_BIC_EMY");
-
-  //pRunManager -> SetUserInitialization(new BrachyPhysicsList);
-  //REMEMBER in java: WORLD SIZE>PHANTOM SIZE!!!!..external
   pRunManager->SetUserInitialization(new MyModularPhysicsList());
 
   // Initialize the detector component

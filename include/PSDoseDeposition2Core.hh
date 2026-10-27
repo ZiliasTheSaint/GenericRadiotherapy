@@ -39,7 +39,7 @@ public:
   PSDoseDeposition2Core(G4String name, const G4String& unit, G4int depth=0);
   virtual ~PSDoseDeposition2Core();
   
-protected: // with description
+protected:
       virtual G4bool ProcessHits(G4Step*,G4TouchableHistory*);
 
       virtual G4double ComputeVolume(G4Step*, G4int idx);

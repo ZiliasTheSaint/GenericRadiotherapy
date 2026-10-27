@@ -50,11 +50,8 @@ private:
   DetectorConstruction*  detector;// pointer to detector
   G4UIdirectory*               detectorDir; 
   G4UIcmdWithAString*          phantomMaterialCmd; // change phantom material
-  //G4UIcmdWithAString*          sourceCmd; // change brachytherapic source 
-  G4UIcmdWith3VectorAndUnit* mBoxSizeCmd;
 
-  //G4UIcmdWithADoubleAndUnit* activityCmd;
-  //G4UIcmdWithADoubleAndUnit* timeCmd;
+  G4UIcmdWith3VectorAndUnit* mBoxSizeCmd;
   G4UIcmdWithADoubleAndUnit* worldSizeCmd;
   G4UIcmdWithADoubleAndUnit* fsourceTopCmd;
   G4UIcmdWithADoubleAndUnit* ffrontalBeamRadiusCmd;

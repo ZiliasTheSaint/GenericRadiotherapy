@@ -32,10 +32,6 @@
 #include "G4IonTable.hh"
 #include "G4UImanager.hh"
 #include "G4RunManager.hh"
-//#include "BrachyFactory.hh"
-//#include "BrachyFactoryLeipzig.hh"
-//#include "BrachyFactoryIr.hh"
-//#include "BrachyFactoryI.hh"
 #include "PrimaryGeneratorMessenger.hh"
 #include "DetectorConstruction.hh"
 
@@ -43,9 +39,7 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 {
 
  primaryMessenger = new PrimaryGeneratorMessenger(this);
- // Default source: iridium source 
- //factory = new BrachyFactoryIr();
-
+ 
   G4int numberParticles = 1;
  
   particleGun = new G4ParticleGun(numberParticles);
@@ -57,15 +51,14 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
   G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
   G4String particleName;
   G4ParticleDefinition* particle
-                    = particleTable->FindParticle(particleName="gamma");//e-");//DEFAULT, change in run1.mac
+                    = particleTable->FindParticle(particleName="gamma");
   particleGun->SetParticleDefinition(particle);
   particleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.,1.));//DEFAULT
   particleGun->SetParticleEnergy(0.662 *MeV);//DEFAULT
 }
 
 PrimaryGeneratorAction::~PrimaryGeneratorAction()
-{
- //delete factory;
+{ 
  delete particleGun;
  delete primaryMessenger;
 }
@@ -79,8 +72,7 @@ void PrimaryGeneratorAction::ProcessFrontalBeam(){
   if (FDC<height && FDC>phantomSizeZ)
 	  height=FDC;
   Detector->SetActualFocusToDetectorCenterDistance(height);
-  //overwrite:
-  //height = Detector->getPhantomSizeZ();
+ 
   xin=0.0;
   yin=0.0;
   zin=-1.0 * height;//already halfsize!!!!
@@ -97,14 +89,7 @@ void PrimaryGeneratorAction::ProcessFrontalBeam(){
 	  R2=xin*xin+yin*yin;
 
 	  if(R2<=beamRadius*beamRadius && R2>0.0){
-		  //shout at random but not good for practical purpose
-		  //double cosphi=xin/sqrt(R2);
-		  //double sinphi=yin/sqrt(R2);
-		  //uin=sin(teta)*cosphi;
-		  //vin=sin(teta)*sinphi;
-
-		  //fixed parallel beam with a bias angle, say with respect to x-axis
-		  //it is ok due to symmetry of the geometry!! 
+		  
 		  vin=0.0;
 		  uin=sqrt(1.0-win*win-vin*vin);
 
@@ -117,8 +102,6 @@ void PrimaryGeneratorAction::ProcessFrontalBeam(){
 
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-  //factory -> CreatePrimaryGeneratorAction(anEvent);
-	//if (sourceType==0)
 	ProcessFrontalBeam();
 	
 	particleGun->SetParticlePosition(G4ThreeVector(xin,yin,zin));
@@ -129,20 +112,5 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 void PrimaryGeneratorAction::SwitchEnergy(G4String sourceChoice)
 {
-  /*G4int flag = 0;
-
-  // Switch the energy spectrum of the photons delivered by the radiative source	
-  if (sourceChoice == "Iodium")
-    {
-      flag=1;
-      if (factory) delete factory;
-    }
-  switch(flag)
-    {
-    case 1:
-      factory = new BrachyFactoryI;
-      break;
-    default:   
-      factory = new BrachyFactoryIr; 
-    }  */    
+  //left here only for spring boot server not updated yet!!!! 
 }

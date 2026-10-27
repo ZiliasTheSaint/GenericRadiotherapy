@@ -57,30 +57,24 @@ public:
 	  meshZ = val;
   };
 
+  static void setMeshHalfSize(G4double x, G4double y, G4double z){ meshHalfX=x; meshHalfY=y; meshHalfZ=z; };
+  static G4double getMeshHalfSizeX(){ return meshHalfX; };
+  static G4double getMeshHalfSizeY(){ return meshHalfY; };
+  static G4double getMeshHalfSizeZ(){ return meshHalfZ; };
+
   // store a quantity into a file
   void DumpQuantityToFile(const G4String & psName, const G4String & fileName, const G4String & option);
   
-  G4double basicAnalyze(G4double x, G4double x2, G4int n){
-	  G4double temp=x;G4double temp2=x2;G4int nevents=n;
-	  temp=temp/nevents;temp2=temp2/nevents;
-	  temp2 = temp2 - temp*temp;
-	  if (nevents>1) temp2=temp2/(nevents-1.0);
-	  if (temp2 >0.)
-	   temp2 = sqrt(temp2); 
-	  //else temp2 = 99.99;//never!
-	  //=========percent
-	  if (temp!=0.0){
-	   temp2 = std::min(100.0*temp2/temp,99.9);
-      } //else temp2 = 99.9;//no score means no score not necessarly an error!
-	  return temp2;
-  }
-
 private:
-	//BrachyDetectorConstruction*    phantom;     //pointer to the geometry
+	
 	int iCall;
 	static G4int meshX;
 	static G4int meshY;
 	static G4int meshZ;
+
+	static G4double meshHalfX;
+	static G4double meshHalfY;
+	static G4double meshHalfZ;
 };
 
 #endif

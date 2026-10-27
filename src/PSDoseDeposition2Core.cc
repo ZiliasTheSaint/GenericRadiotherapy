@@ -53,41 +53,27 @@ PSDoseDeposition2Core::~PSDoseDeposition2Core()
 G4bool PSDoseDeposition2Core::ProcessHits(G4Step* aStep,G4TouchableHistory*)
 {
   G4double edep = aStep->GetTotalEnergyDeposit();
-  if ( edep == 0. ) return FALSE;
+  if ( edep == 0. ) return false;
+
+  const G4StepPoint* pre = aStep->GetPreStepPoint();
+  const G4double weight  = pre->GetWeight();
 
   G4int idx = ((G4TouchableHistory*)
-	       (aStep->GetPreStepPoint()->GetTouchable()))
+	       (pre->GetTouchable()))
                ->GetReplicaNumber(indexDepth);
+
   G4double cubicVolume = ComputeVolume(aStep, idx);
-
   
-
   G4double density = aStep->GetTrack()->GetStep()->GetPreStepPoint()->GetMaterial()->GetDensity();
     
-  G4double dose    = edep / ( density * cubicVolume );
-  dose *= aStep->GetPreStepPoint()->GetWeight(); 
-  //dose = dose * dose;//square!!!!!!!!!!!!!!!!!!!!!!!!!!!WORKS; if commented =>we get exactly the dose!!!!!
-  //Hmm..not per event but per Step!!!! Want per event!!!!
-  //it is not intended for stat!!!!
+  G4double dose    = weight*edep / ( density * cubicVolume );
+  
   G4int  index = GetIndex(aStep);
   EvtMap->add(index,dose);  
-
-  //G4cout<<" core voxel volume [cm3] = "<<cubicVolume/cm3
-	//  <<" rho = "<<density*cm3/g
-	  //<<" index = "<<index
-	  //<<G4endl;
-
-  //////
-  /*const G4VTouchable* touchable = aStep->GetPreStepPoint()->GetTouchable();
-  G4int i = touchable->GetReplicaNumber(2);//fDepthi);
-  G4int j = touchable->GetReplicaNumber(1);//fDepthj);
-  G4int k = touchable->GetReplicaNumber(0);//fDepthk);
-  index =  i*fNj*fNk+j*fNk+k;*/
-  /////////
-  //G4cout<<"RHO [g/cm3]: "<<density*cm3/g<<G4endl;//ok!
-  EventAction::Fill(index,dose);//that should do the trick!
-  EventAction::FillEnergy(index,edep);
-  return TRUE;
+    
+  EventAction::Fill(index,dose);
+  EventAction::FillEnergy(index,weight*edep);
+  return true;
 }
 
 void PSDoseDeposition2Core::Initialize(G4HCofThisEvent* HCE)
@@ -98,6 +84,7 @@ void PSDoseDeposition2Core::Initialize(G4HCofThisEvent* HCE)
   HCE->AddHitsCollection(HCID, (G4VHitsCollection*)EvtMap);
 }
 
+//other methods we must override (they are virtual in superclass):
 void PSDoseDeposition2Core::EndOfEvent(G4HCofThisEvent*)
 {;}
 
@@ -133,10 +120,9 @@ G4double PSDoseDeposition2Core::ComputeVolume(G4Step* aStep, G4int idx){
 
   G4VPhysicalVolume* physVol = aStep->GetPreStepPoint()->GetPhysicalVolume();
   G4VPVParameterisation* physParam = physVol->GetParameterisation();
-  G4VSolid* solid = 0; //G4cout<<"PARAMPAMPAM!!!!!!!!!!!!!!!!!!!"<<G4endl;	
+  G4VSolid* solid = 0; 	
   if(physParam)
   { // for parameterized volume
-	//  G4cout<<"PARAM!!!!!!!!!!!!!!!!!!!"<<G4endl;	
     if(idx<0)
     {
       G4ExceptionDescription ED;
@@ -147,11 +133,8 @@ G4double PSDoseDeposition2Core::ComputeVolume(G4Step* aStep, G4int idx){
     solid->ComputeDimensions(physParam,idx,physVol);
   }
   else
-  { // for ordinary volume
-	 // G4cout<<"ORDINARY!!!!!!!!!!!!!!!!!!!"<<G4endl;	
+  { // for ordinary volume	
     solid = physVol->GetLogicalVolume()->GetSolid();
-
-	//G4cout<<"ORDINARY!!!!!!!!!!!!!!!!!!!"<<solid->GetCubicVolume()<<G4endl;	//OK!!!!!!!!!VOXEL VOLUME
   }
   
   return solid->GetCubicVolume();

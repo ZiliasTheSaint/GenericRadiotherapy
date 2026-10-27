@@ -34,15 +34,49 @@
 #include "G4UnitsTable.hh"
 #include "UserScoreWriter.hh"
 
-struct voxelDose {
-  G4double xc;//center x-coordonate
-  G4double yc;//center y-coordonate
-  G4double zc;//center z-coordonate
-  G4double dose;//in macro filea change energyDeposit with doseDeposit
-  G4double err;//percent
-};
+namespace
+{  
+  void CentralRange(G4int n, G4int& lo, G4int& hi)
+  {
+    if (n % 2 == 0) { lo = n/2 - 1; hi = n/2; }//e.g. n=4 (indices 0,1,2,3) => lo=1,hi=2; hi-lo+1 = 2 blocks; n=6 (0,1,2,3,4,5) => lo=2, hi=3
+    else            { lo = n/2 - 1; hi = n/2 + 1; }//e.g. n=5 (indices 0,1,2,3,4) => lo=1, hi =3; hi-lo+1 = 3 blocks; n=9 (0,1,2,3,4,5,6,7,8) =>lo=3,hi=5 and 4
+    if (lo < 0)     lo = 0;
+    if (hi > n - 1) hi = n - 1;
+  }
+}
+
+void RunAction::PrintAxisProfile(const char* axisName, G4int nBins, G4double voxelWidth,
+                                       const std::vector<G4double>& sum,
+                                       const std::vector<G4double>& sum2,
+                                       G4int nVoxelsInBlock, G4int nEvents,
+                                       G4double localConversion)
+{
+  for (G4int i = 0; i < nBins; i++) {
+    //if (sum[i] == 0.0) continue;//contiunue loop by ignoring code below this line!
+	//comment this if want all bins!!!!
+    const G4double coord    = (-nBins + 1 + 2*i)*voxelWidth/2;
+    const G4double meanDose = sum[i]/nVoxelsInBlock*localConversion/gray;
+
+    const G4double err      = basicAnalyze(sum[i], sum2[i], nEvents);
+
+	if (axisName=="x"){
+		xcoordProfile.push_back(coord);
+		projxProfile.push_back(meanDose);
+	} else if (axisName=="y"){
+		ycoordProfile.push_back(coord);
+		projyProfile.push_back(meanDose);
+	} else if (axisName=="z"){
+		zcoordProfile.push_back(coord);
+		projzProfile.push_back(meanDose);
+	}
+
+    G4cout << " " << axisName << "= " << coord/mm << " voxelDose = "
+           << meanDose << " +/- " << err << " % " << G4endl;
+  }
+}
 
 RunAction::RunAction()
+	:totalEdepRun(0.), totalEdepRun2(0.)
 {
 		// add new units for dose 
   const G4double milligray = 1.e-3*gray;
@@ -82,20 +116,15 @@ RunAction::~RunAction()
 void RunAction::BeginOfRunAction(const G4Run* aRun)
 { 	
 	phantom->PrintDetectorParameters();
-	
-	//BrachyDetectorConstruction::nbEventInRun = aRun->GetNumberOfEventToBeProcessed();
-	
-	//G4double rho = phantom->getPhantonDensity();
-	//rho=rho*cm3/g;
-	//G4cout << "Phantom density [g/cm3] = " << rho << G4endl;
+
  G4cout << "### Run " << aRun -> GetRunID() << " start." << G4endl;
 
-	//doseTotal.clear();	
     dose.clear();
 	dose2.clear();
     EDEP.clear();
 	EDEP2.clear();
- 
+
+	totalEdepRun=0.; totalEdepRun2=0.;
 }
 
 void RunAction::EndOfRunAction(const G4Run* aRun)
@@ -108,21 +137,23 @@ void RunAction::EndOfRunAction(const G4Run* aRun)
 }
 
 void RunAction::Fill(G4int index, G4double doseDeposit)
-
 {
-	//doseTotal[index] += doseDeposit;
+	//this is used for sum of doses in all voxels...has no meaning!
 	dose[index] += doseDeposit;
 	dose2[index] += doseDeposit*doseDeposit;
- 
-	//totalPhantomEnergy += energyDeposit;
-	//totalPhantomEnergy2 += energyDeposit*energyDeposit;
 }
 
 void RunAction::FillEnergy(G4int index, G4double energyDeposit)
-
 {
 	EDEP[index] += energyDeposit;
 	EDEP2[index] += energyDeposit*energyDeposit;
+}
+
+//for better stats
+void RunAction::FillEnergyTotal(G4double eventEnergy)
+{
+	totalEdepRun  += eventEnergy;
+	totalEdepRun2 += eventEnergy*eventEnergy;
 }
 
 void RunAction::totalRunEnergyDeposit(G4int n){
@@ -130,98 +161,43 @@ void RunAction::totalRunEnergyDeposit(G4int n){
 	
 	std::map<G4int,G4double>::iterator i = dose.begin();
 	std::map<G4int,G4double>::iterator end = dose.end();
-	//std::map<G4int,G4double>::iterator id = dose.begin();
 	std::map<G4int,G4double>::iterator id2 = dose2.begin();
 
 	std::map<G4int,G4double>::iterator ie = EDEP.begin();
 	std::map<G4int,G4double>::iterator ie2 = EDEP2.begin();
 	
-	//also want initial ACTIVITY and exposureTime -1 means undefinite..until source is dead, i.e. activity<0.1 Bq!!
-	/*G4double initialActivity = BrachyDetectorConstruction::initialSourceActivity;
-	G4double halfLife = BrachyDetectorConstruction::sourceHalfLife;
-	G4double exposureTime = BrachyDetectorConstruction::exposureTime;
-	G4double zeroActivity = 0.1 * becquerel;
-    if (exposureTime <0.0) {
-	     //until source is exhausted 0.1Bq=A=A0 x exp(-exposureTime x ln(2)/(halfLife))
-	     exposureTime = (halfLife/log(2.0))*log(initialActivity/zeroActivity);
-    }
-    G4double cor = (exposureTime * log(2.0) / halfLife)
-						/ (1.0 - exp(-exposureTime* log(2.0) / halfLife));
-    G4double meanActivityDuringExposureTime = initialActivity/cor;
-    G4double NumberOfQuantaEmitted = exposureTime*meanActivityDuringExposureTime;//gamas or always present X-ray!
-    //G4double NumberOfQuantaSimulated = n;//1.0 * BrachyDetectorConstruction::nbEventInRun;
-	*/
-	std::vector<G4double> centerZ, finalProfileZ,centerY, finalProfileY,centerX, finalProfileX;
-    std::vector<voxelDose>profileZ,profileX,profileY;//, profileZmm,profileZmp,profileZpm,profileZpp;
-	//std::vector<voxelDose> projX,projY,projZ;    
-    //std::vector<G4double> projcenterZ, finalprojProfileZ,
-		//projcenterY, finalprojProfileY,
-		//projcenterX, finalprojProfileX;
-    
-    G4double minZ=0.0;
-    G4double maxZ=0.0;
-    G4double minY=0.0;
-    G4double maxY=0.0;
-    G4double minX=0.0;
-    G4double maxX=0.0;
-
 	int nX = UserScoreWriter::getMeshSegment_X();
 	int nY = UserScoreWriter::getMeshSegment_Y();
 	int nZ = UserScoreWriter::getMeshSegment_Z();
 	
-	G4double voxelWidthX =2.0*(phantom->getPhantomSizeX())/nX;//1. *mm;
-	G4double voxelWidthY =2.0*(phantom->getPhantomSizeY())/nY;//1. *mm;
-	G4double voxelWidthZ =2.0*(phantom->getPhantomSizeY())/nZ;//1. *mm;
+	G4double voxelWidthX =2.0*UserScoreWriter::getMeshHalfSizeX()/nX;//1. *mm;
+	G4double voxelWidthY =2.0*UserScoreWriter::getMeshHalfSizeY()/nY;//1. *mm;
+	G4double voxelWidthZ =2.0*UserScoreWriter::getMeshHalfSizeZ()/nZ;//1. *mm;
 
-	G4double voxelMaterialDensity = phantom->getPhantonDensity();
-
-	//G4cout<<" voxel volume [cm3] = "<<(voxelWidthX*voxelWidthY*voxelWidthZ)/cm3
-		//<<"; rho= "<<voxelMaterialDensity*cm3/g<<G4endl;
-
+	G4double voxelMaterialDensity = phantom->getPhantonDensity();	
 	G4double voxelMass = voxelMaterialDensity*voxelWidthX*voxelWidthY*voxelWidthZ;//for renormalization
 	//renormalization is needed; imagine a quanta depositing an energy E. Dose in whole phantom is E/M, but in 
 	//an arbitrary voxel surrounding the deposition site is E/m which is much greater than actual phantom dose!!!
-	//renormalization, i.e. get rid of infinities, is a must, not an error but an intrinsecaly requirement.
-	//it is simply how it works when dealing with small quantities such voxels. It is very similar to quantum mechanic renormalization.
-	//it arise from same reasons since QM is itself a framework dealing with small quantities.
-	//tested and yes, it works within resonable limits voxel total dose~real phantom dose. 
-	//small differences still exists but is due to interface air(world)/tissue(phantom). !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//TESTED PUT WORLD AS BEING WATER (SAME RHO AS TISSUE) AND BOTH VOXEL TOTAL DOSE AND PHANTOM DOSE (FROM EDEP) MATCH!!! EXACTLY!!!!!!!!!!!!!!!!!!!!!
-
-	//projection vectors
-	// declare xy array
-    std::vector<double> projy;std::vector<double> ycoord;
-    for(int y = 0; y < nY; y++){
-		G4double yy = ( - nY + 1+ 2*y )* voxelWidthY/2;
-		ycoord.push_back(yy);
-		projy.push_back(0.);
-	}
-    std::vector<double> projx;std::vector<double> xcoord;
-    for(int x = 0; x < nX; x++){
-		G4double xx = ( - nX + 1+ 2*x )* voxelWidthX/2;
-		xcoord.push_back(xx);
-		projx.push_back(0.);
-	}
-    std::vector<double> projz;std::vector<double> zcoord;
-    for(int z = 0; z < nZ; z++){
-		G4double zz = ( - nZ + 1+ 2*z )* voxelWidthZ/2;
-		zcoord.push_back(zz);
-		projz.push_back(0.);
-	}
-
-	std::vector<std::vector<double> > projxy;//not used
-    for(int x = 0; x < nX; x++) projxy.push_back(projy);
-	//
-	//G4cout<<"nX = "<<nX<<" ; nY= "<<nY<<" ; nZ= "<<nZ<<G4endl;
+	
 	G4double totalDose = 0.0;
 	G4double totalDose2 = 0.0;
-	G4double totalerr = 0.0;//basicAnalyze(ddep, ddep, n);
+	G4double totalerr = 0.0;
 
+	//just for testing
 	G4double realtotalDose = 0.0;
-	G4double realtotalDose2 = 0.0;
-	G4double realtotalerr = 0.0;//basicAnalyze(ddep, ddep, n);
+	
+	G4double realtotalerr = 0.0;
 	G4double phantomMass = phantom->GetPhantomMass();
-	G4double renorm = voxelMass/phantomMass;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	G4double renorm = voxelMass/phantomMass;
+	
+	
+	G4int loX, hiX, loY, hiY, loZ, hiZ;
+	CentralRange(nX, loX, hiX);//n par => 2 indices; n odd =>3 indeces including central!
+	CentralRange(nY, loY, hiY);
+	CentralRange(nZ, loZ, hiZ);
+	std::vector<G4double> profDoseX(nX, 0.0), profDoseX2(nX, 0.0);
+	std::vector<G4double> profDoseY(nY, 0.0), profDoseY2(nY, 0.0);
+	std::vector<G4double> profDoseZ(nZ, 0.0), profDoseZ2(nZ, 0.0);
 
 	for(int x = 0; x < nX; x++) {
 		for(int y = 0; y < nY; y++) {   
@@ -230,148 +206,50 @@ void RunAction::totalRunEnergyDeposit(G4int n){
 				G4double xx = ( - nX + 1+ 2*x )* voxelWidthX/2; 
 				G4double yy = ( - nY + 1+ 2*y )* voxelWidthY/2;
 				G4double zz = ( - nZ + 1+ 2*z )* voxelWidthZ/2;
-				//if (x==0 && y==0) zcoord.push_back(zz);	
-				//G4int idx = GetIndex(x, y, z);//MAPPPPPPPPPPPPPPPPPPPPPPPPPP index with value!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				//return x*fNMeshSegments[1]*fNMeshSegments[2] +y*fNMeshSegments[2]+z;
+				
 				G4int idx = x*nY*nZ +y*nZ+z;
-				//find the index to be used for all maps:
-				std::map<G4int, G4double>::iterator value = dose.find(idx);//i=doseTotal.find(idx);
-				std::map<G4int, G4double>::iterator value2 = dose2.find(idx);//error
 
-				std::map<G4int, G4double>::iterator value3 = EDEP.find(idx);//error
-				std::map<G4int, G4double>::iterator value4 = EDEP2.find(idx);//error
+				//find the index to be used for all maps:
+				std::map<G4int, G4double>::iterator value = dose.find(idx);
+				std::map<G4int, G4double>::iterator value2 = dose2.find(idx);
+
+				std::map<G4int, G4double>::iterator value3 = EDEP.find(idx);
+				std::map<G4int, G4double>::iterator value4 = EDEP2.find(idx);
 
 				if (value != end){
 
 					G4double ddep = (value->second);
 					G4double ddep2 = (value2->second);
-					//Note in eventAction: if(doseDep != 0.) we only have non-zero doseDep!
-										
-					totalDose=totalDose+ddep;//total
-					totalDose2=totalDose2+ddep2;//total
+															
+					totalDose=totalDose+ddep;//total voxel doses
+					totalDose2=totalDose2+ddep2;
 
 					G4double edep = (value3->second);
 					G4double edep2 = (value4->second);
-					realtotalDose = realtotalDose+edep;///phantomMass;
-					realtotalDose2 = realtotalDose2+edep2;///(phantomMass*phantomMass);
-					//=======================================================================
-					G4double err = basicAnalyze(ddep, ddep2, n);
-					//projection profile
-					projxy[x][y] += ddep;////projection on x-y plane
-					projx[x]+= ddep;//projection on x
-					projy[y]+= ddep;//projection on y
-					projz[z]+= ddep;//projection on z
-					//sum of projxyz[i] is totalDose..obviouse!
 
-					//central axis dose
-					if (
-						((x==nX/2-1)&& (y==nY/2-1)) ||//((x==149)&& (y==149)) ||
-						((x==nX/2-1)&& (y==nY/2)) ||//((x==149)&& (y==150)) ||
-						((x==nX/2)&& (y==nY/2-1)) ||//((x==150)&& (y==149)) ||
-						((x==nX/2)&& (y==nY/2))		//((x==150)&& (y==150))		
-						||
-						((x==nX/2-1)&& (y==nY/2+1))||
-						((x==nX/2)&& (y==nY/2+1))||
-						((x==nX/2+1)&& (y==nY/2+1))||
-						((x==nX/2+1)&& (y==nY/2))||
-						((x==nX/2+1)&& (y==nY/2-1))
-
-						) {
-				
-						if (zz<minZ)minZ=zz;
-						if (zz>maxZ)maxZ=zz;
-						
-						voxelDose vD;
-						vD.xc=xx;vD.yc=yy;vD.zc=zz;
-						vD.dose = ddep;
-						vD.err=err;
-						
-						profileZ.push_back(vD);				
-					}
-
-					if (
-						((x==nX/2-1)&& (z==nZ/2-1))||//((x==149)&& (z==149))||
-						((x==nX/2-1)&& (z==nZ/2))||//((x==149)&& (z==150))||
-						((x==nX/2)&& (z==nZ/2-1))||//((x==150)&& (z==149))||
-						((x==nX/2)&& (z==nZ/2))//((x==150)&& (z==150))
-						||
-						((x==nX/2-1)&& (z==nZ/2+1))||
-						((x==nX/2)&& (z==nZ/2+1))||
-						((x==nX/2+1)&& (z==nZ/2+1))||
-						((x==nX/2+1)&& (z==nZ/2))||
-						((x==nX/2+1)&& (z==nZ/2-1))
-
-						) {
-			
-						if (yy<minY)minY=yy;
-						if (yy>maxY)maxY=yy;
-						
-						voxelDose vD;
-						vD.xc=xx;vD.yc=yy;vD.zc=zz;
-						vD.dose = ddep;
-						vD.err=err;
-
-						profileY.push_back(vD);
-					//G4cout<<"; xc = "<<vD.xc<<"; yc = "<<vD.yc<<"; zc = "<<vD.zc<<"; Edep[keV] = "<<vD.ddep<<G4endl;
-
-					}
-
-
-					if (
-						((y==nY/2-1)&& (z==nZ/2-1))||//((y==149)&& (z==149))||
-						((y==nY/2-1)&& (z==nZ/2))||//((y==149)&& (z==150))||
-						((y==nY/2)&& (z==nZ/2-1))||//((y==150)&& (z==149))||
-						((y==nY/2)&& (z==nZ/2))//((y==150)&& (z==150))
-						||
-						((y==nY/2-1)&& (z==nZ/2+1))||
-						((y==nY/2)&& (z==nZ/2+1))||
-						((y==nY/2+1)&& (z==nZ/2+1))||
-						((y==nY/2+1)&& (z==nZ/2))||
-						((y==nY/2+1)&& (z==nZ/2-1))
-
-						){
-
-						if (xx<minX)minX=xx;
-						if (xx>maxX)maxX=xx;
-						
-						voxelDose vD;
-						vD.xc=xx;vD.yc=yy;vD.zc=zz;
-						vD.dose = ddep;
-						vD.err=err;
-		    
-						profileX.push_back(vD);
-						//G4cout<<"; xc = "<<vD.xc<<"; yc = "<<vD.yc<<"; zc = "<<vD.zc<<
-						//"; Ddep = "<<G4BestUnit(vD.dose, "Dose")<<G4endl;
-
-					}
+					realtotalDose = realtotalDose+edep;
+					
+					const G4bool cx = (x >= loX && x <= hiX);
+					const G4bool cy = (y >= loY && y <= hiY);
+					const G4bool cz = (z >= loZ && z <= hiZ);
+					if (cx && cy) { profDoseZ[z] += ddep; profDoseZ2[z] += ddep2; }//central z profile
+					if (cx && cz) { profDoseY[y] += ddep; profDoseY2[y] += ddep2; }//central y profile
+					if (cy && cz) { profDoseX[x] += ddep; profDoseX2[x] += ddep2; }//central x profile
 				}//if (value != end){
 			}//z
 		}//y
 	}//x
 	
-	totalerr = basicAnalyze(totalDose, totalDose2, n);
-	realtotalerr = basicAnalyze(realtotalDose, realtotalDose2, n);
-	realtotalDose=realtotalDose/phantomMass;
-	/*
-	for(int x = 0; x < nX; x++) {
-		for(int y = 0; y < fNMeshSegments[1]; y++) {
-
-			ofile << x << "," << y << ",";
-			ofile << projxy[x][y] << G4endl;
-
-		} // y
-	} // x
-	*/
+	totalerr = basicAnalyze(totalDose, totalDose2, n);//not good for sum of sqares 
+	//below is good we have square, not sum of squares!!!!
+	realtotalerr = basicAnalyze(totalEdepRun, totalEdepRun2, n);
 	
-
-	int nmm;
-	nmm= profileZ.size();
-	G4double number = 1.0;//NO MEDIATION..DOSE FROM ALL 9 CELLS!!!!!!!!!!!!!!!4.0;//4 beans around center  
-	G4double sum = 0.0;G4double errsum = 0.0;
-	//double conversion = 1000.0*1000.0*NumberOfQuantaEmitted/n;//micro
-	double conversion =1.0e12*renorm* 1.0/n;//NumberOfQuantaEmitted/n;//NumberOfQuantaSimulated;
+	realtotalDose=realtotalDose/phantomMass;//testing
+	totalEdepRun = totalEdepRun/phantomMass;
+		
+	double conversion =1.0e12*renorm* 1.0/n;
 	double conversion2 =1.0e12* 1.0/n;
-	G4cout<<"Voxel dose renormalization is needed to convert voxel dose to actual phantom dose, i.e. renorm = voxelMass/phantom Mass "<<G4endl;
+	
 	G4cout<<"Particle gun is placed at [cm] "<<
 		(phantom->GetActualFocusToDetectorCenterDistance())/cm<<
 		" from phantom center. It is at -z coordonate and particles are emitted toward positive z-axis."<<G4endl;
@@ -382,106 +260,61 @@ void RunAction::totalRunEnergyDeposit(G4int n){
 	G4cout<<"Voxel sizes [mm]: Xsize = "<<voxelWidthX/mm<<
 		"; Ysize = "<<voxelWidthY/mm<<
 		"; Zsize = "<<voxelWidthZ/mm<<G4endl;	
+
 	G4cout<<"---------------------------------------------------------------------------"<<G4endl;
-	//G4cout<<"Renormalized total voxel dose [pGy/initial quantas]: "<<totalDose*conversion/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
+	
 	G4cout<<"Renormalized total voxel dose [pGy/initial quantas]: "<<totalDose*conversion/gray<<" +/- "<<totalerr<<" % "<<G4endl;	
-	//G4cout<<"Real phantom total dose [uGy/initial quantas]: "<<realtotalDose*conversion2/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
+	//total dose of voxels has no meaning....the only meaning is the axis profiles!
+
+	G4cout<<"Real phantom total dose [uGy/initial quantas]: "<<realtotalDose*conversion2/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
+	G4cout<<"Dose in phantom [uGy/initial quantas]: "<<totalEdepRun*conversion2/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
+	//confirmed from idx (realTotalDose) = from just total (totalEdepRun)
+	/*
+	PROOF:
+	Renormalized total voxel dose [pGy/initial quantas]: 0.117142 +/- -1.23953e-021 % -> no meaning
+	even with renormalization!!!!
+	Real phantom total dose [uGy/initial quantas]: 0.0485184 +/- 4.24431 %//same 
+	Dose in phantom [uGy/initial quantas]: 0.0485184 +/- 4.24431 %//same
+	*/
+	
 	G4cout<<"---------------------------------------------------------------------------"<<G4endl;
+	
 	G4cout<<"Voxel center coordinate on a particular central axis and VOXEL DOSE [pGy/initial quantas]: "<<G4endl;	
-	//G4cout<<"z-axis"<<G4endl;
-	//G4cout<<"BEGIN_DATA"<<G4endl;
-	for (G4double z = minZ; z<=maxZ; z=z+voxelWidthZ){//1.0){//1 mm increment
-		sum = 0.0;errsum=0.0;
-		for(int i = 0; i < nmm; i++) {
-			voxelDose vD = profileZ[i];
-			if (vD.zc==z) {
-				sum = sum + vD.dose;
-				errsum = errsum+vD.err;//%
-			}
-		}
-		sum = sum /number;errsum = errsum /number;
-		sum=sum*conversion/gray;//Gy->conversion
-G4cout<<" z= "<<z<<" voxelDose = "<<sum<<" +/- "<<errsum<<" % "<<G4endl;
-		centerZ.push_back(z);
-		finalProfileZ.push_back(sum);
-	}
-	//G4cout<<"END_DATA"<<G4endl;
-
-	nmm= profileY.size();
-	sum = 0.0;errsum=0.0;
-	//G4cout<<"y-axis"<<G4endl;
-	//G4cout<<"BEGIN_DATA"<<G4endl;
-	for (G4double y = minY; y<=maxY; y=y+voxelWidthY){//1.0){//1 mm increment
-		sum = 0.0;errsum=0.0;
-		for(int i = 0; i < nmm; i++) {
-			voxelDose vD = profileY[i];
-			if (vD.yc==y) {
-				sum = sum + vD.dose;
-				errsum = errsum+vD.err;//%
-			}
-		}
-		sum = sum /number;errsum = errsum /number;
-		sum=sum*conversion/gray;//Gy->conversion
-G4cout<<" y = "<<y<<" voxelDose = "<<sum<<" +/- "<<errsum<<" % "<<G4endl;
-		centerY.push_back(y);
-		finalProfileY.push_back(sum);
-	}
-	//G4cout<<"END_DATA"<<G4endl;
-
-	nmm= profileX.size();
-	sum = 0.0;errsum=0.0;
-	//G4cout<<"x-axis"<<G4endl;
-	//G4cout<<"BEGIN_DATA"<<G4endl;
-	for (G4double x = minX; x<=maxX; x=x+voxelWidthX){//1.0){//1 mm increment
-		sum = 0.0;errsum=0.0;
-		for(int i = 0; i < nmm; i++) {
-			voxelDose vD = profileX[i];
-			if (vD.xc==x){
-				sum = sum + vD.dose;
-				errsum = errsum+vD.err;//%
-			}
-		}
-		sum = sum /number;errsum = errsum /number;
-		sum=sum*conversion/gray;//Gy->conversion
-G4cout<<" x= "<<x<<" voxelDose = "<<sum<<" +/- "<<errsum<<" % "<<G4endl;
-		centerX.push_back(x);
-		finalProfileX.push_back(sum);
-	}
-	//G4cout<<"END_DATA"<<G4endl;
+	
+	G4cout<<"Local dose [mGy] on the central axes: mean over the central "
+	      <<"transversal voxel block; error assumes independent voxels"<<G4endl;
+	PrintAxisProfile("z", nZ, voxelWidthZ, profDoseZ, profDoseZ2, (hiX-loX+1)*(hiY-loY+1), n, conversion);
+	PrintAxisProfile("y", nY, voxelWidthY, profDoseY, profDoseY2, (hiX-loX+1)*(hiZ-loZ+1), n, conversion);
+	PrintAxisProfile("x", nX, voxelWidthX, profDoseX, profDoseX2, (hiY-loY+1)*(hiZ-loZ+1), n, conversion);
+	
 	G4cout<<"---------------------------------------------------------------------------"<<G4endl;
-	G4cout<<"Renormalized dose profile, i.e. SUM(proj_x)=SUM(proj_y)=SUM(proj_z)=total dose, [pGy/initial quantas]: "<<G4endl;	
+	G4cout<<"Dose profile on central axis [pGy/initial quantas]: "<<G4endl;	
 	//===========
 	G4cout<<"x-axis"<<G4endl;
 	G4cout<<"BEGIN_DATA"<<G4endl;
-	double dummy=0.0;double tdose = totalDose*conversion/gray;
+	
 	for(int x = 0; x < nX; x++) {
-		dummy = dummy +projx[x]*conversion/gray;
-		if (projx[x]!=0)
-			G4cout<<xcoord[x]<<" "<<projx[x]*conversion/gray<<G4endl;
+		G4cout<<xcoordProfile[x]<<" "<<projxProfile[x]<<G4endl;		
 	}
-	//G4cout<<" DUMMYx = "<<dummy<<"; tdose= "<<tdose<<G4endl;
+	
 	G4cout<<"END_DATA"<<G4endl;
 
 	G4cout<<"y-axis"<<G4endl;
 	G4cout<<"BEGIN_DATA"<<G4endl;
-	dummy=0.0;
+
 	for(int y = 0; y < nY; y++) {
-		dummy = dummy +projy[y]*conversion/gray;
-		if (projy[y]!=0)
-			G4cout<<ycoord[y]<<" "<<projy[y]*conversion/gray<<G4endl;
+		G4cout<<ycoordProfile[y]<<" "<<projyProfile[y]<<G4endl;		
 	}
-	//G4cout<<" DUMMYy = "<<dummy<<"; tdose= "<<tdose<<G4endl;
+	
 	G4cout<<"END_DATA"<<G4endl;
 
 	G4cout<<"z-axis"<<G4endl;
 	G4cout<<"BEGIN_DATA"<<G4endl;
-	dummy=0.0;
+
 	for(int z = 0; z < nZ; z++) {
-		dummy = dummy +projz[z]*conversion/gray;
-		if (projz[z]!=0)
-			G4cout<<zcoord[z]<<" "<<projz[z]*conversion/gray<<G4endl;
+		G4cout<<zcoordProfile[z]<<" "<<projzProfile[z]<<G4endl;		
 	}
-	//G4cout<<" DUMMYz = "<<dummy<<"; tdose= "<<tdose<<G4endl;//OK!!
+	
 	G4cout<<"END_DATA"<<G4endl;
 }
 

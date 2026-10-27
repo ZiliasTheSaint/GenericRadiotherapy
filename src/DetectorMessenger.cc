@@ -43,13 +43,6 @@ DetectorMessenger::DetectorMessenger( DetectorConstruction* Det): detector(Det)
   phantomMaterialCmd -> SetParameterName("choice",false);
   phantomMaterialCmd -> AvailableForStates(G4State_Idle);
   
-  /*sourceCmd = new G4UIcmdWithAString("/source/switch",this);
-  sourceCmd -> SetGuidance("Assign the selected geometry to G4RunManager."); 
-  sourceCmd -> SetParameterName("choice",true);
-  sourceCmd -> SetDefaultValue(" ");
-  sourceCmd -> SetCandidates("Iridium Iodium Leipzig ");
-  sourceCmd -> AvailableForStates(G4State_PreInit,G4State_Idle); */
-
   mBoxSizeCmd = new G4UIcmdWith3VectorAndUnit("/other/mesh/boxSize",this);
   mBoxSizeCmd->SetGuidance("Define size of the scoring mesh.");
   mBoxSizeCmd->SetGuidance("Dx  Dy  Dz  unit");
@@ -57,18 +50,6 @@ DetectorMessenger::DetectorMessenger( DetectorConstruction* Det): detector(Det)
   mBoxSizeCmd->SetRange("Di>0. && Dj>0. && Dk>0.");
   mBoxSizeCmd->SetDefaultUnit("mm");
 
-  /*activityCmd = new G4UIcmdWithADoubleAndUnit("/source/initial_activity",this);
-  activityCmd->SetGuidance("Set source initial activity.");
-  activityCmd->SetParameterName("Activity",false);
-  activityCmd->SetRange("Activity>0.");
-  activityCmd->SetUnitCategory("Activity");
-  activityCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-
-  timeCmd = new G4UIcmdWithADoubleAndUnit("/exposure/time",this);
-  timeCmd->SetGuidance("Set exposure time. if<0, indefinetely");
-  timeCmd->SetParameterName("Time",false);
-  timeCmd->SetUnitCategory("Time");
-  timeCmd->AvailableForStates(G4State_PreInit,G4State_Idle);*/
   worldSizeCmd = new G4UIcmdWithADoubleAndUnit("/world/size",this);
   worldSizeCmd->SetGuidance("Set world size");
   worldSizeCmd->SetParameterName("Size",false);
@@ -97,12 +78,10 @@ DetectorMessenger::DetectorMessenger( DetectorConstruction* Det): detector(Det)
  }
 DetectorMessenger::~DetectorMessenger()
 {
-  //delete sourceCmd;
   delete phantomMaterialCmd; 
   delete mBoxSizeCmd;
   delete detectorDir;
-  //delete activityCmd;
-  //delete timeCmd;
+ 
   delete worldSizeCmd;//>phantom size!!!
   delete fsourceTopCmd;
 	delete ffrontalBeamRadiusCmd;
@@ -116,37 +95,11 @@ void DetectorMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
   if( command == phantomMaterialCmd )
    { detector -> SetPhantomMaterial(newValue);}
 
-  // Switch the source in the phantom
- /* if( command == sourceCmd )
-   {
-    if(newValue=="Iodium" || newValue=="Iridium"|| newValue=="Leipzig")
-     { 
-       detector -> SelectBrachytherapicSeed(newValue); 
-       detector -> SwitchBrachytherapicSeed();
-      }
-   }*/
-
 	if(command==mBoxSizeCmd) {
-		G4ThreeVector size = mBoxSizeCmd->GetNew3VectorValue(newValue);
-		/*G4double vsize[3];
-		vsize[0] = size.x();
-		vsize[1] = size.y();
-		vsize[2] = size.z();*/
-		G4double val = size.x();
-		detector->setPhantomSizeX(val);
-		val = size.y();
-		detector->setPhantomSizeY(val);
-		val = size.z();
-		detector->setPhantomSizeZ(val);
+		//just for the command to exist for springboot server which create mac files!
+		//when command will be removed from there, it will also be removed from here.
+		return;
 	}
-
-	/*if( command == activityCmd ){
-		BrachyDetectorConstruction::initialSourceActivity=activityCmd->GetNewDoubleValue(newValue);
-	}
-
-	if( command == timeCmd ){
-		BrachyDetectorConstruction::exposureTime=timeCmd->GetNewDoubleValue(newValue);
-	}*/
 
 	if(command==worldSizeCmd) {
 		detector->setWorldSizeX(worldSizeCmd->GetNewDoubleValue(newValue));

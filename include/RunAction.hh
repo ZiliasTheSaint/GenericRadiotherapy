@@ -31,9 +31,8 @@
 #include "G4UserRunAction.hh"
 #include "G4RunManager.hh"
 #include "globals.hh"
-
+#include <vector> //just in case for below vectors
 class G4Run;
-//class RunMessenger;
 class DetectorConstruction;
 
 class RunAction : public G4UserRunAction
@@ -48,6 +47,9 @@ public:
   
   void Fill(G4int index, G4double doseDeposit);
   void FillEnergy(G4int index, G4double energyDeposit);
+
+  //for better statistics (covariance built in)
+  void FillEnergyTotal(G4double eventEnergy);
 
   G4double basicAnalyze(G4double x, G4double x2, G4int n){
 	  G4double temp=x;G4double temp2=x2;G4int nevents=n;
@@ -71,6 +73,16 @@ private:
 	std::map<G4int,G4double> EDEP;
 	std::map<G4int,G4double> EDEP2;
 
+	G4double totalEdepRun;
+	G4double totalEdepRun2;
+
+	std::vector<double> projyProfile;std::vector<double> ycoordProfile;
+	std::vector<double> projxProfile;std::vector<double> xcoordProfile;
+	std::vector<double> projzProfile;std::vector<double> zcoordProfile;
+
+	void PrintAxisProfile(const char* axisName, G4int nBins, G4double voxelWidth,
+                        const std::vector<G4double>& sum, const std::vector<G4double>& sum2,
+                        G4int nVoxelsInBlock, G4int nEvents, G4double localConversion);
 };
 #endif
 

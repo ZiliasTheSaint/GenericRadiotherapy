@@ -32,9 +32,8 @@
 class G4ParticleGun;
 class G4Run;
 class G4Event;
-class BrachyAnalysisManager;
-//class BrachyFactory;
-class  PrimaryGeneratorMessenger;
+
+class PrimaryGeneratorMessenger;
 class DetectorConstruction;
 class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
@@ -50,7 +49,6 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
   void SwitchEnergy(G4String);
 
 private:
-  //BrachyFactory* factory;
   PrimaryGeneratorMessenger* primaryMessenger;
   G4ParticleGun*           particleGun;	 //pointer a to G4  class
   DetectorConstruction*    Detector;     //pointer to the geometry
@@ -58,6 +56,7 @@ private:
   G4double fweight;//particle weight used in variance reduction
   G4double xin;G4double yin;G4double zin;//initial coordinates
   G4double uin;G4double vin;G4double win;//initial directional cosine
+  
   void ProcessFrontalBeam();
 };
 

@@ -123,62 +123,37 @@ void BrachyMaterial::DefineMaterials()
   A = 183.84* g/mole;
   d = 19.3*g/cm3;  
   matW = new G4Material("Tungsten",Z = 74.,A,d);
-  //matW =man->FindOrBuildMaterial("G4_W");
-  //matW->SetName("Tungsten");
-  
+    
   // Perspex, plexiglass, lucite 
   d = 1.19*g/cm3;
   matplexiglass = new G4Material("Plexiglass",d,3);
   matplexiglass->AddElement(elH,0.08);
   matplexiglass->AddElement(elC,0.60);
   matplexiglass->AddElement(elO,0.32);
-  //matplexiglass =man->FindOrBuildMaterial("G4_PLEXIGLASS");
-  //matplexiglass->SetName("Plexiglass");
   
   // Lead material
   A = 207.19*g/mole;
   Z = 82;
   d = 11.35*g/cm3;
   matPb = new G4Material("Lead",Z,A,d);
-  //matPb =man->FindOrBuildMaterial("G4_Pb");
-  //matPb->SetName("Lead");
-
+ 
   // Iridium (Medical Physics, Vol 25, No 10, Oct 1998)
   d = 22.42*g/cm3;
   A = 191.96260*g/mole ;
   Z = 77;
-  //G4Isotope* ir192 = new G4Isotope("ir192", Z, 192, A);
-  //G4Element* elIr  = new G4Element("iridiumElement", "Ir192", 1);
-  //elIr->AddIsotope(ir192,100*perCent);
-  //matir192 = new G4Material("Iridium",d,1);
-  //matir192->AddElement(elIr,1);
-
-  matir192 = new G4Material("Iridium",Z,A,d);//some warnings with shell in this build!!!!
-  /*
-  This problem comes most probably from the G4radioactive decay. It has been reported recently in the bugzilla G4 sytem under bug nb 1162. 
-  In fact it is not really a bug but a warning. For an e- capture decay, the radioactive decay module selects in some case a e- shell that is higher than 
-  the highest shell available in G4AtomicTransitionManager. When it is the case G4AtomicTransitionManager issue a message warning an then use the highest 
-  available shell. This warning has been suppressed in the development version of G4 and this will be most probably available with the next patch.
-  But with or without the warning the physics treatment will be the same. We are looking for a way to better sample the e- shell in G4RadioactiveDecay but 
-  this need in general more time to implement. 
-  */
-  //matir192 = man->FindOrBuildMaterial("G4_Ir");
-  //matir192->SetName("Iridium");
-
+  
+  matir192 = new G4Material("Iridium",Z,A,d);
+  
   //titanium
   A = 47.88*g/mole;
   d = 4.50*g/cm3;
   Titanium = new G4Material("titanium" ,Z = 22.,A,d);
-  //Titanium = man->FindOrBuildMaterial("G4_Ti");
-  //Titanium->SetName("titanium");
   
   // Air material
   d = 1.290*mg/cm3;
   G4Material* matAir = new G4Material("Air",d,2);
   matAir->AddElement(elN,0.7);
   matAir->AddElement(elO,0.3);
-  //matAir = man->FindOrBuildMaterial("G4_AIR");
-  //matAir->SetName("Air");
   
   // Water
   d = 1.000*g/cm3;
@@ -186,9 +161,7 @@ void BrachyMaterial::DefineMaterials()
   matH2O->AddElement(elH,2);
   matH2O->AddElement(elO,1);
   matH2O->GetIonisation()->SetMeanExcitationEnergy(75.0*eV);
-  //matH2O = man->FindOrBuildMaterial("G4_WATER");
-  //matH2O->SetName("Water");
-
+  
   //soft tissue(http://www.nist.gov)
   d = 1.0*g/cm3;
   soft = new G4Material("tissue",d,13);
@@ -205,9 +178,7 @@ void BrachyMaterial::DefineMaterials()
   soft->AddElement(elCa,0.00023);
   soft->AddElement(elFe,0.00005);
   soft->AddElement(elZn,0.00003); 
-  //soft = man->FindOrBuildMaterial("G4_TISSUE_SOFT_ICRP");
-  //soft->SetName("tissue");
-
+  
   // Stainless steel (Medical Physics, Vol 25, No 10, Oct 1998)
   d = 8.02*g/cm3 ;
   matsteel = new G4Material("Stainless steel",d,5);
@@ -216,37 +187,29 @@ void BrachyMaterial::DefineMaterials()
   matsteel->AddElement(elCr, 0.19);
   matsteel->AddElement(elNi, 0.10);
   matsteel->AddElement(elFe, 0.68);
-  //matsteel = man->FindOrBuildMaterial("G4_STAINLESS-STEEL");
-  //matsteel->SetName("Stainless steel");
- 
+  
   //gold(chimica degli elementi N.N Greenwood,A.Earnshaw)
   A = 196.97*g/mole;
   d = 19.32*g/cm3;
   gold = new G4Material("gold",Z = 79.,A,d);
-  //gold = man->FindOrBuildMaterial("G4_Au");
-  //gold->SetName("gold");
-
+  
   //IodiumCore(chimica degli elementi N.N Greenwood,A.Earnshaw)
   A = 124.9*g/mole;
   d = 4.862*g/cm3;
   matI = new G4Material("Iodium",Z = 53.,A,d);
-  //matI = man->FindOrBuildMaterial("G4_I");
-  //matI->SetName("Iodium");
-
+  
   //ceramic(Medical Physics, May 2000)
   d = 2.88*g/cm3;
   ceramic = new G4Material("allumina",d,2);
   ceramic->AddElement(elAl,2);
   ceramic->AddElement(elO,3);
-  //G4_ALUMINUM_OXIDE, d=3.97?? NO!
-
+  
   //vacuum
   G4double density = universe_mean_density;
   G4double pressure = 3.e-18*pascal;
   G4double temperature = 2.73*kelvin;
   A=1.01*g/mole;
   Vacuum = new G4Material("Galactic", Z = 1., A, density,kStateGas,temperature,pressure);
-  //G4_Galactic
   
   //compact bone (http://www.NIST.gov)
   d = 1.85*g/cm3;
@@ -259,8 +222,7 @@ void BrachyMaterial::DefineMaterials()
   bone->AddElement(elP,0.07);
   bone->AddElement(elS,0.002);
   bone->AddElement(elCa,0.147);
-  //G4_BONE_COMPACT_ICRU
-
+  
   //muscle(http://www.NIST.gov)
   d = 1.05*g/cm3;//added
   muscle = new G4Material("muscle",d,9);

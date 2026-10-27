@@ -87,11 +87,8 @@ void EventAction::totalEventDoseDeposit(){
        G4int index = i->first;
        G4double doseDep = i->second;
       
-       //if(doseDep != 0.)
-	   //{
-	       pointerRun->Fill(index, doseDep);
-	   //}
-       
+	   pointerRun->Fill(index, doseDep);
+	          
 	   i++;
     }
 }
@@ -103,17 +100,21 @@ void EventAction::totalEventEnergyDeposit(){
 	std::map<G4int,G4double>::iterator i = energyEventTotal.begin();
     std::map<G4int,G4double>::iterator end = energyEventTotal.end();
 
+	G4double eventEnergy = 0.0;
+
 	while(i!=end)
     {
 
        G4int index = i->first;
        G4double edepDep = i->second;
-      
-      // if(edepDep != 0.)
-	   //{
-	       pointerRun->FillEnergy(index, edepDep);
-	   //}
-       
+    
+	   pointerRun->FillEnergy(index, edepDep);
+
+	   eventEnergy += edepDep;
+	          
 	   i++;
     }
+
+	//better stats for whole phantom
+	pointerRun->FillEnergyTotal(eventEnergy);
 }
