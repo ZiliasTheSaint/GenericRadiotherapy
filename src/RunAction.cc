@@ -265,7 +265,10 @@ void RunAction::totalRunEnergyDeposit(G4int n){
 	
 	G4cout<<"Renormalized total voxel dose [pGy/initial quantas]: "<<totalDose*conversion/gray<<" +/- "<<totalerr<<" % "<<G4endl;	
 	//total dose of voxels has no meaning....the only meaning is the axis profiles!
-
+	//still for this simple geometry renorm SHOULD WORK. This dose and 2 below should match
+	//they are not...but for water they fo...seems UpdatePhantom as it is now does not work
+	//it is still physically a less than mesh phantom->rest of mesh has world material, so
+	//that explain why doses match only when world = phantom material!!!!!!
 	G4cout<<"Real phantom total dose [uGy/initial quantas]: "<<realtotalDose*conversion2/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
 	G4cout<<"Dose in phantom [uGy/initial quantas]: "<<totalEdepRun*conversion2/gray<<" +/- "<<realtotalerr<<" % "<<G4endl;	
 	//confirmed from idx (realTotalDose) = from just total (totalEdepRun)

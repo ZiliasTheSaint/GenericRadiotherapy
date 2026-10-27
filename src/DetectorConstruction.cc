@@ -117,6 +117,22 @@ void DetectorConstruction::ConstructPhantom()
   World = new G4Box("World",worldSizeX,worldSizeY,worldSizeZ);
   WorldLog = new G4LogicalVolume(World,air,"WorldLog",0,0,0);      //total dose != dose='real'????
   //WorldLog = new G4LogicalVolume(World,water,"WorldLog",0,0,0);  //total dose=dose='real'??????
+  /*
+  
+  UpdatePhantomSize() nu redimensioneaza fantomul.
+  G4Box-ul Phantom construit in ConstructPhantom() nu e atins nicaieri, iar Construct() nu mai ruleaza 
+  dupa Initialize(). GeometryHasBeenModified() doar re-inchide si re-optimizeaza geometria existenta.
+  So: Geometria reala ramane cubul de 10 cm, iar PrintDetectorParameters() afiseazã 30 cm, pentru ca
+  tipareste variabilele, nu solidul. De aceea pare cã „mesh = fantom“.
+	phantomMass ramane 1 kg (cubul de 10 cm), desi mesh-ul acoperã 27 kg.
+	Voxelii din afara fantomului sunt aer, cu doza ×~830 fata de apa.
+
+	Asta raspunde la intrebarea din ultimul commit (de ce dozele sunt la fel doar cand lumea are acelasi
+	material cu fantomu“). Totalul voxel e SUM E_v x (RHO_fantom/RHO_v) / M, deci coincide cu 
+	SUM E / M doar daca RHO_v = RHO_fantom peste tot. Comentariul din RunAction.cc arata exact acest
+	efect: 0,117 fata de 0,0485.!!!!!!!!!!
+  
+  */
   WorldPhys = new G4PVPlacement(0,G4ThreeVector(),
                                 "WorldPhys",WorldLog,0,false,0);
 
