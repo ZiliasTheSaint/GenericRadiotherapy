@@ -180,12 +180,12 @@ void DetectorConstruction::PrintDetectorParameters()
 {
   G4cout << "-----------------------------------------------------------------------"
          << G4endl
-         << "the phantom is a box whose size is: " << G4endl
-         << phantomSizeX *2./cm
-         << " cm * "
-         << phantomSizeY *2./cm
-         << " cm * "
-         << phantomSizeZ *2./cm
+         << "the phantom is a box whose size is (X,Y,Z): " << G4endl
+         << 2.0*Phantom->GetXHalfLength()/cm//real dimension to not lie if not catch bug when not updated geometry!!phantomSizeX *2./cm
+         << " cm X "
+         << 2.0*Phantom->GetYHalfLength()/cm//phantomSizeY *2./cm
+         << " cm X "
+         << 2.0*Phantom->GetYHalfLength()/cm//phantomSizeZ *2./cm
          << " cm" << G4endl
          << "The phantom is made of "
          << phantomAbsorberMaterial -> GetName() <<G4endl

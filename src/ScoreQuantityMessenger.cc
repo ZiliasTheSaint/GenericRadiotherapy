@@ -75,6 +75,12 @@ ScoreQuantityMessenger::~ScoreQuantityMessenger()
 
 void ScoreQuantityMessenger::SetNewValue(G4UIcommand * command,G4String newVal)
 {	
+	// comenzile care nu sunt ale noastre: le preia clasa de baza
+	if (command != qdoseDep2Cmd && command != mBinCmd) {
+		G4ScoreQuantityMessenger::SetNewValue(command, newVal);
+		return;
+	}
+
 	G4VScoringMesh* mesh = fSMan->GetCurrentMesh();
       if(!mesh)
       {
